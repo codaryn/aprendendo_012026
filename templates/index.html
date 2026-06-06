@@ -3,135 +3,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Estoque - Microempresas</title>
+    <title>Sistema de Estoque</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <h1>📦 Sistema de Estoque</h1>
-                <p class="subtitle">Gerenciador para Microempresas</p>
-            </div>
-        </header>
 
-        <nav class="tabs">
-            <button class="tab-btn active" data-tab="estoque">Estoque</button>
-            <button class="tab-btn" data-tab="adicionar">Adicionar Produto</button>
-            <button class="tab-btn" data-tab="pesquisar">Pesquisar</button>
-            <button class="tab-btn" data-tab="gerenciar">Gerenciar</button>
-        </nav>
-
-        <main class="content">
-            <!-- ABA 1: ESTOQUE -->
-            <section id="estoque" class="tab-content active">
-                <h2>Estoque Completo</h2>
-                <div class="controls">
-                    <button class="btn btn-secondary" onclick="ordenarEstoque()">🔄 Ordenar</button>
-                    <select id="ordenarPor" class="select-control">
-                        <option value="id">por ID</option>
-                        <option value="produto">por Produto</option>
-                        <option value="quantidade">por Quantidade</option>
-                        <option value="preco_unitario">por Preço</option>
-                    </select>
-                </div>
-                <div id="tabelaEstoque" class="tabela-container">
-                    <p class="loading">Carregando...</p>
-                </div>
-            </section>
-
-            <!-- ABA 2: ADICIONAR PRODUTO -->
-            <section id="adicionar" class="tab-content">
-                <h2>Adicionar Novo Produto</h2>
-                <form id="formAdicionar" class="form">
-                    <div class="form-group">
-                        <label for="nomeProduto">Nome do Produto:</label>
-                        <input type="text" id="nomeProduto" placeholder="Ex: notebook, mouse, teclado" required>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="quantidadeProduto">Quantidade:</label>
-                            <input type="number" id="quantidadeProduto" min="1" placeholder="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="precoProduto">Preço Unitário (R$):</label>
-                            <input type="number" id="precoProduto" min="0.01" step="0.01" placeholder="0.00" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">✅ Adicionar Produto</button>
-                </form>
-                <div id="mensagemAdicionar" class="mensagem"></div>
-            </section>
-
-            <!-- ABA 3: PESQUISAR -->
-            <section id="pesquisar" class="tab-content">
-                <h2>Pesquisar Produto</h2>
-                <div class="form-group">
-                    <label for="pesquisaNome">Nome do Produto:</label>
-                    <input type="text" id="pesquisaNome" placeholder="Digite o nome do produto..." required>
-                    <button class="btn btn-primary" onclick="pesquisarProduto()">🔍 Pesquisar</button>
-                </div>
-                <div id="resultadoPesquisa" class="tabela-container"></div>
-            </section>
-
-            <!-- ABA 4: GERENCIAR -->
-            <section id="gerenciar" class="tab-content">
-                <h2>Gerenciar Estoque</h2>
-                
-                <div class="gerenciar-section">
-                    <h3>🗑️ Remover Produto</h3>
-                    <div class="form-group">
-                        <label for="produtoRemover">Nome do Produto:</label>
-                        <input type="text" id="produtoRemover" placeholder="Digite o nome do produto..." required>
-                    </div>
-                    <div class="form-group">
-                        <label>Tipo de Remoção:</label>
-                        <div class="radio-group">
-                            <label><input type="radio" name="tipoRemocao" value="1" checked> Deletar tudo</label>
-                            <label><input type="radio" name="tipoRemocao" value="2"> Remover quantidade específica</label>
-                        </div>
-                    </div>
-                    <div id="quantidadeRemoverContainer" class="form-group" style="display:none;">
-                        <label for="quantidadeRemover">Quantidade a Remover:</label>
-                        <input type="number" id="quantidadeRemover" min="1" placeholder="0">
-                    </div>
-                    <button class="btn btn-danger" onclick="removerProduto()">🗑️ Remover</button>
-                </div>
-
-                <div class="gerenciar-section">
-                    <h3>💰 Atualizar Preço</h3>
-                    <div class="form-group">
-                        <label for="produtoAtualizarPreco">Nome do Produto:</label>
-                        <input type="text" id="produtoAtualizarPreco" placeholder="Digite o nome do produto..." required>
-                    </div>
-                    <div class="form-group">
-                        <label for="novoPreco">Novo Preço (R$):</label>
-                        <input type="number" id="novoPreco" min="0.01" step="0.01" placeholder="0.00" required>
-                    </div>
-                    <button class="btn btn-secondary" onclick="atualizarPreco()">💰 Atualizar Preço</button>
-                </div>
-
-                <div class="gerenciar-section danger-zone">
-                    <h3>⚠️ Zona de Perigo</h3>
-                    <p>Estas ações não podem ser desfeitas!</p>
-                    <button class="btn btn-danger" onclick="limparEstoque()">🗑️ Esvaziar Estoque Completo</button>
-                </div>
-            </section>
-        </main>
-
-        <footer class="footer">
-            <p>&copy; 2026 Sistema de Estoque | Desenvolvido com ❤️ para Microempresas</p>
-        </footer>
-    </div>
-
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <p id="modalMensagem"></p>
-            <button class="btn btn-primary" onclick="fecharModal()">Ok</button>
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <button class="menu-btn" onclick="toggleSidebar()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <span>Estoque</span>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <nav class="sidebar-nav">
+        <div class="nav-item active" data-page="adicionar" onclick="navigateTo('adicionar')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <span>Adicionar Produto</span>
+        </div>
+        <div class="nav-item" data-page="pesquisar" onclick="navigateTo('pesquisar')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Pesquisar Produto</span>
+        </div>
+        <div class="nav-item" data-page="ver" onclick="navigateTo('ver')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Ver Estoque</span>
+        </div>
+        <div class="nav-item" data-page="excluir" onclick="navigateTo('excluir')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            <span>Excluir Produto</span>
+        </div>
+        <div class="nav-item" data-page="ordenar" onclick="navigateTo('ordenar')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="9"/><polyline points="9 5 12 2 15 5"/><line x1="12" y1="22" x2="12" y2="15"/><polyline points="15 19 12 22 9 19"/></svg>
+            <span>Ordenar</span>
+        </div>
+        <div class="nav-item danger" data-page="esvaziar" onclick="navigateTo('esvaziar')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            <span>Esvaziar Estoque</span>
+        </div>
+    </nav>
+</aside>
+
+<!-- MAIN -->
+<div class="main" id="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <div class="topbar-brand">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <span>Sistema de Estoque</span>
+        </div>
+        <div class="user-btn">
+            <div class="user-avatar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <span>Admin</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+        <!-- PAGE: ADICIONAR PRODUTO -->
+        <div class="page active" id="page-adicionar">
+            <div class="page-header">
+                <div class="page-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+                <div class="page-title">
+                    <h2>Estoque Atual</h2>
+                    <p>Lista de produtos cadastrados</p>
+                </div>
+            </div>
+
+            <div class="two-col">
+                <div class="card">
+                    <div class="table-actions">
+                        <button class="btn btn-primary" onclick="loadStock()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            Atualizar
+                        </button>
+                    </div>
+                    <div id="table-adicionar"></div>
+                    <div class="summary-bar" id="summary-adicionar"></div>
+                </div>
+
+                <div class="card form-card">
+                    <div class="form-card-header">
+                        <div class="page-icon" style="width:36px;height:36px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                        </div>
+                        <strong>Adicionar Novo Produto</strong>
+                    </div>
+                    <form id="form-adicionar" onsubmit="addProduct(event)">
+                        <div class="form-group">
+                            <label>Nome do Produto</label>
+                            <input type="text" id="input-nome" placeholder="Digite o nome do produto" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Preço (R$)</label>
+                            <input type="number" id="input-preco" min="0.01" step="0.01" placeholder="Digite o preço" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantidade</label>
+                            <input type="number" id="input-quantidade" min="1" placeholder="Digite a quantidade" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                            Adicionar Produto
+                        </button>
+                        <button type="button" class="btn btn-outline" style="width:100%;justify-content:center;" onclick="document.getElementById('form-adicionar').reset()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            Limpar Campos
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: PESQUISAR -->
+        <div class="page" id="page-pesquisar">
+            <div class="page-header">
+                <div class="page-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <div class="page-title">
+                    <h2>Pesquisar Produto</h2>
+                    <p>Busque por nome ou ID</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="search-bar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="input-pesquisa" placeholder="Pesquisar por nome ou ID..." oninput="filterSearch(this.value)">
+                </div>
+                <div id="table-pesquisar"></div>
+            </div>
+        </div>
+
+        <!-- PAGE: VER ESTOQUE -->
+        <div class="page" id="page-ver">
+            <div class="page-header">
+                <div class="page-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+                <div class="page-title">
+                    <h2>Ver Estoque</h2>
+                    <p>Visualização completa do inventário</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-actions">
+                    <button class="btn btn-primary" onclick="loadStock()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        Atualizar
+                    </button>
+                </div>
+                <div id="table-ver"></div>
+                <div class="summary-bar" id="summary-ver"></div>
+            </div>
+        </div>
+
+        <!-- PAGE: EXCLUIR PRODUTO -->
+        <div class="page" id="page-excluir">
+            <div class="page-header">
+                <div class="page-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+                </div>
+                <div class="page-title">
+                    <h2>Gerenciar Produtos</h2>
+                    <p>Edite ou exclua produtos do estoque</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <p class="instruction-text">
+                    Clique em <span class="highlight-red">excluir</span> para remover um produto ou em <span class="highlight-teal">editar</span> para modificá-lo.
+                </p>
+                <div id="table-excluir"></div>
+            </div>
+        </div>
+
+        <!-- PAGE: ORDENAR -->
+        <div class="page" id="page-ordenar">
+            <div class="page-header">
+                <div class="page-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="9"/><polyline points="9 5 12 2 15 5"/><line x1="12" y1="22" x2="12" y2="15"/><polyline points="15 19 12 22 9 19"/></svg>
+                </div>
+                <div class="page-title">
+                    <h2>Ordenar Estoque</h2>
+                    <p>Organize os produtos por campo</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="sort-controls">
+                    <span class="sort-label">Ordenar por:</span>
+                    <div class="sort-btn-group">
+                        <button class="sort-btn active" data-field="id" onclick="setSortField('id')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/></svg>
+                            ID
+                        </button>
+                        <button class="sort-btn" data-field="produto" onclick="setSortField('produto')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/></svg>
+                            Nome
+                        </button>
+                        <button class="sort-btn" data-field="quantidade" onclick="setSortField('quantidade')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/></svg>
+                            Quantidade
+                        </button>
+                    </div>
+                    <div class="sort-direction">
+                        <button class="sort-btn active" data-dir="asc" onclick="setSortDir('asc')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/></svg>
+                            Crescente
+                        </button>
+                        <button class="sort-btn" data-dir="desc" onclick="setSortDir('desc')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 13 12 18 7 13"/></svg>
+                            Decrescente
+                        </button>
+                    </div>
+                </div>
+                <div id="table-ordenar"></div>
+            </div>
+        </div>
+
+        <!-- PAGE: ESVAZIAR -->
+        <div class="page" id="page-esvaziar">
+            <div class="page-header">
+                <div class="page-icon" style="background:rgba(231,76,60,0.1);">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                </div>
+                <div class="page-title">
+                    <h2>Esvaziar Estoque</h2>
+                    <p>Remover todos os produtos do inventário</p>
+                </div>
+            </div>
+
+            <div class="warning-box" id="esvaziar-warning">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div>
+                    <div class="warning-title">Atenção: Ação Irreversível</div>
+                    <div class="warning-text" id="esvaziar-desc">Ao esvaziar o estoque, todos os produtos e unidades serão permanentemente removidos. Esta ação não pode ser desfeita.</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Produtos Cadastrados</div>
+                    <div class="stat-value" id="esvaziar-count">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total em Estoque</div>
+                    <div class="stat-value" id="esvaziar-total">0</div>
+                </div>
+            </div>
+
+            <button class="btn btn-danger esvaziar-btn" onclick="clearStock()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                Esvaziar Todo o Estoque
+            </button>
+        </div>
+
+    </main>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal" onclick="closeEditModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+        <h3>Editar Produto</h3>
+        <div class="form-group">
+            <label>Nome do Produto</label>
+            <input type="text" id="edit-nome" placeholder="Nome do produto">
+        </div>
+        <div class="form-group">
+            <label>Preço (R$)</label>
+            <input type="number" id="edit-preco" min="0.01" step="0.01" placeholder="Preço">
+        </div>
+        <div class="form-group">
+            <label>Quantidade</label>
+            <input type="number" id="edit-quantidade" min="1" placeholder="Quantidade">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeEditModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveEdit()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

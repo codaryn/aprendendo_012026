@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import os
 from datetime import datetime
-
 app = Flask(__name__)
 
 CSV_FILE = "estoque.csv"
@@ -14,7 +13,6 @@ def init_csv():
 
 def get_df():
     return pd.read_csv(CSV_FILE)
-
 def save_df(df):
     df.to_csv(CSV_FILE, index=False)
 
@@ -145,17 +143,44 @@ def ordenar_estoque():
         data = request.json
         campo = data.get('campo', 'id')
         ordem = data.get('ordem', 'asc')
-        
+
         df = get_df()
         ascending = ordem == 'asc'
-        
-        if campo in ['quantidade', 'preco_unitario']:
-            ascending = not ascending
-        
         df = df.sort_values(by=campo, ascending=ascending)
         save_df(df)
-        
+
         return jsonify({'mensagem': f'Estoque ordenado por {campo}!', 'estoque': df.to_dict('records')})
+    except Exception as e:
+        return jsonify({'erro': str(e)}), 500
+
+@app.route('/api/editar', methods=['POST'])
+def editar_produto():
+    try:
+        data = request.json
+        produto_id = int(data.get('id'))
+        novo_nome = data.get('produto', '').strip().replace(' ', '_').lower()
+        nova_quantidade = int(data.get('quantidade', 0))
+        novo_preco = float(data.get('preco_unitario', 0))
+
+        if not novo_nome:
+            return jsonify({'erro': 'Nome do produto inválido'}), 400
+        if nova_quantidade <= 0:
+            return jsonify({'erro': 'Quantidade deve ser maior que 0'}), 400
+        if novo_preco <= 0:
+            return jsonify({'erro': 'Preço deve ser maior que 0'}), 400
+
+        df = get_df()
+        df['id'] = df['id'].astype(int)
+
+        if produto_id not in df['id'].values:
+            return jsonify({'erro': 'Produto não encontrado'}), 404
+
+        df.loc[df['id'] == produto_id, 'produto'] = novo_nome
+        df.loc[df['id'] == produto_id, 'quantidade'] = nova_quantidade
+        df.loc[df['id'] == produto_id, 'preco_unitario'] = novo_preco
+
+        save_df(df)
+        return jsonify({'mensagem': 'Produto atualizado com sucesso!', 'estoque': df.to_dict('records')})
     except Exception as e:
         return jsonify({'erro': str(e)}), 500
 

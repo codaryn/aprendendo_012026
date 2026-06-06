@@ -1,368 +1,329 @@
-// API BASE URL
-const API_BASE = '/api';
+// Global state
+let stockData = [];
+let currentSortField = 'id';
+let currentSortDir = 'asc';
+let editingProductId = null;
 
-// FUNCIONES UTILITÁRIAS
-function mostrarMensagem(tipo, titulo, mensagem) {
-    const modal = document.getElementById('modal');
-    const modalMensagem = document.getElementById('modalMensagem');
-    
-    modalMensagem.innerHTML = `<strong>${titulo}</strong><br>${mensagem}`;
-    modal.style.display = 'block';
-}
-
-function fecharModal() {
-    document.getElementById('modal').style.display = 'none';
-    carregarEstoque();
-}
-
-const closeBtn = document.querySelector('.close');
-if (closeBtn) {
-    closeBtn.onclick = function() {
-        document.getElementById('modal').style.display = 'none';
-    };
-}
-
-window.onclick = function(event) {
-    const modal = document.getElementById('modal');
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
-};
-
-function mostrarMensagemInline(elementId, tipo, mensagem) {
-    const elemento = document.getElementById(elementId);
-    if (!elemento) return;
-    
-    elemento.className = `mensagem ${tipo}`;
-    elemento.textContent = mensagem;
-    
-    setTimeout(() => {
-        elemento.className = 'mensagem';
-    }, 5000);
-}
-
-// GERENCIAR ABAS
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        // Remove active de todos os botões e conteúdos
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        // Adiciona active no clicado
-        btn.classList.add('active');
-        const tabId = btn.getAttribute('data-tab');
-        document.getElementById(tabId).classList.add('active');
-        
-        // Recarrega dados quando necessário
-        if (tabId === 'estoque') {
-            carregarEstoque();
-        }
-    });
+// ─── INIT ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    loadStock();
 });
 
-// CARREGAR ESTOQUE
-async function carregarEstoque() {
-    try {
-        const response = await fetch(`${API_BASE}/estoque`);
-        const estoque = await response.json();
-        
-        const tabelaEstoque = document.getElementById('tabelaEstoque');
-        
-        if (estoque.length === 0) {
-            tabelaEstoque.innerHTML = '<p class="loading">O estoque está vazio</p>';
-            return;
-        }
-        
-        let html = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Produto</th>
-                        <th>Quantidade</th>
-                        <th>Preço Unitário</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        estoque.forEach(item => {
-            const total = (item.quantidade * item.preco_unitario).toFixed(2);
-            html += `
-                <tr>
-                    <td>${item.id}</td>
-                    <td><strong>${item.produto.replace(/_/g, ' ')}</strong></td>
-                    <td>${item.quantidade}</td>
-                    <td>R$ ${parseFloat(item.preco_unitario).toFixed(2)}</td>
-                    <td><strong>R$ ${total}</strong></td>
-                </tr>
-            `;
-        });
-        
-        html += '</tbody></table>';
-        tabelaEstoque.innerHTML = html;
-    } catch (error) {
-        console.error('Erro ao carregar estoque:', error);
-        document.getElementById('tabelaEstoque').innerHTML = '<p class="loading" style="color: red;">Erro ao carregar estoque</p>';
+// ─── SIDEBAR ──────────────────────────────────────
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// ─── NAVIGATION ───────────────────────────────────
+function navigateTo(page) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.page === page);
+    });
+    document.querySelectorAll('.page').forEach(p => {
+        p.classList.toggle('active', p.id === 'page-' + page);
+    });
+
+    if (page === 'pesquisar') {
+        renderTable('table-pesquisar', stockData);
+        const input = document.getElementById('input-pesquisa');
+        if (input) { input.value = ''; }
     }
 }
 
-// ADICIONAR PRODUTO
-document.getElementById('formAdicionar').addEventListener('submit', async (e) => {
+// ─── LOAD STOCK ────────────────────────────────────
+async function loadStock() {
+    try {
+        const res = await fetch('/api/estoque');
+        stockData = await res.json();
+        renderAllTables();
+        updateEsvaziarStats();
+    } catch {
+        showToast('Erro ao carregar estoque', 'error');
+    }
+}
+
+// ─── FORMAT HELPERS ─────────────────────────────────
+function formatName(name) {
+    return String(name)
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+}
+
+function formatPrice(price) {
+    return 'R$ ' + parseFloat(price).toFixed(2).replace('.', ',');
+}
+
+function getBadgeClass(qty) {
+    if (qty >= 100) return 'badge-green';
+    if (qty >= 30) return 'badge-yellow';
+    return 'badge-red';
+}
+
+// ─── RENDER TABLE ───────────────────────────────────
+function renderTable(containerId, data, showActions = false) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">Nenhum produto encontrado</div>';
+        return;
+    }
+
+    const actionsHeader = showActions ? '<th>Ações</th>' : '';
+
+    const rows = data.map(item => {
+        const actions = showActions ? `<td>
+            <button class="btn-icon edit" onclick="openEditModal(${item.id})" title="Editar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn-icon delete" onclick="deleteProduct(${item.id}, '${item.produto}')" title="Excluir">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+        </td>` : '';
+
+        return `<tr>
+            <td class="td-id">${item.id}</td>
+            <td class="td-name">${formatName(item.produto)}</td>
+            <td class="td-price">${formatPrice(item.preco_unitario)}</td>
+            <td><span class="badge ${getBadgeClass(item.quantidade)}">${item.quantidade}</span></td>
+            ${actions}
+        </tr>`;
+    }).join('');
+
+    container.innerHTML = `<table>
+        <thead><tr>
+            <th>ID</th><th>Produto</th><th>Preço</th><th>Quantidade</th>${actionsHeader}
+        </tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ─── RENDER ALL TABLES ──────────────────────────────
+function renderAllTables() {
+    renderTable('table-adicionar', stockData);
+    renderTable('table-ver', stockData);
+    renderTable('table-excluir', stockData, true);
+    renderTable('table-ordenar', stockData);
+
+    const total = stockData.reduce((sum, item) => sum + Number(item.quantidade), 0);
+    const summaryHTML = `
+        <div class="summary-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total de Produtos</span>
+            <span class="summary-value">${stockData.length}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total em Estoque</span>
+            <span class="summary-value">${total}</span>
+        </div>`;
+
+    const sa = document.getElementById('summary-adicionar');
+    const sv = document.getElementById('summary-ver');
+    if (sa) sa.innerHTML = summaryHTML;
+    if (sv) sv.innerHTML = summaryHTML;
+}
+
+// ─── ESVAZIAR STATS ─────────────────────────────────
+function updateEsvaziarStats() {
+    const total = stockData.reduce((sum, item) => sum + Number(item.quantidade), 0);
+    const countEl = document.getElementById('esvaziar-count');
+    const totalEl = document.getElementById('esvaziar-total');
+    const descEl = document.getElementById('esvaziar-desc');
+
+    if (countEl) countEl.textContent = stockData.length;
+    if (totalEl) totalEl.textContent = total;
+    if (descEl) {
+        descEl.innerHTML = `Ao esvaziar o estoque, todos os <strong>${stockData.length} produtos</strong> e <strong>${total} unidades</strong> serão permanentemente removidos. Esta ação não pode ser desfeita.`;
+    }
+}
+
+// ─── SEARCH ─────────────────────────────────────────
+function filterSearch(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) { renderTable('table-pesquisar', stockData); return; }
+
+    const filtered = stockData.filter(item =>
+        String(item.id) === q ||
+        item.produto.toLowerCase().includes(q.replace(/ /g, '_')) ||
+        item.produto.toLowerCase().replace(/_/g, ' ').includes(q)
+    );
+    renderTable('table-pesquisar', filtered);
+}
+
+// ─── ADD PRODUCT ─────────────────────────────────────
+async function addProduct(e) {
     e.preventDefault();
-    
-    const produto = document.getElementById('nomeProduto').value.trim();
-    const quantidade = parseInt(document.getElementById('quantidadeProduto').value);
-    const preco = parseFloat(document.getElementById('precoProduto').value);
-    
-    if (!produto || quantidade <= 0 || preco <= 0) {
-        mostrarMensagemInline('mensagemAdicionar', 'erro', '❌ Preencha todos os campos corretamente!');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_BASE}/adicionar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                produto: produto,
-                quantidade: quantidade,
-                preco: preco
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            mostrarMensagem('sucesso', '✅ Sucesso!', data.mensagem);
-            document.getElementById('formAdicionar').reset();
-        } else {
-            mostrarMensagemInline('mensagemAdicionar', 'erro', `❌ ${data.erro}`);
-        }
-    } catch (error) {
-        mostrarMensagemInline('mensagemAdicionar', 'erro', '❌ Erro ao adicionar produto');
-        console.error('Erro:', error);
-    }
-});
 
-// PESQUISAR PRODUTO
-async function pesquisarProduto() {
-    const nome = document.getElementById('pesquisaNome').value.trim().replace(' ', '_').toLowerCase();
-    
-    if (!nome) {
-        alert('Digite o nome do produto!');
-        return;
-    }
-    
+    const nome = document.getElementById('input-nome').value.trim();
+    const preco = parseFloat(document.getElementById('input-preco').value);
+    const quantidade = parseInt(document.getElementById('input-quantidade').value);
+
+    if (!nome || isNaN(preco) || isNaN(quantidade)) return;
+
     try {
-        const response = await fetch(`${API_BASE}/produto/${nome}`);
-        const resultadoPesquisa = document.getElementById('resultadoPesquisa');
-        
-        if (!response.ok) {
-            resultadoPesquisa.innerHTML = '<p class="loading">Produto não encontrado</p>';
-            return;
+        const res = await fetch('/api/adicionar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ produto: nome, quantidade, preco })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast(data.mensagem, 'success');
+            document.getElementById('form-adicionar').reset();
+            await loadStock();
+        } else {
+            showToast(data.erro, 'error');
         }
-        
-        const produto = await response.json();
-        const total = (produto.quantidade * produto.preco_unitario).toFixed(2);
-        
-        const html = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Produto</th>
-                        <th>Quantidade</th>
-                        <th>Preço Unitário</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>${produto.id}</td>
-                        <td><strong>${produto.produto.replace(/_/g, ' ')}</strong></td>
-                        <td>${produto.quantidade}</td>
-                        <td>R$ ${parseFloat(produto.preco_unitario).toFixed(2)}</td>
-                        <td><strong>R$ ${total}</strong></td>
-                    </tr>
-                </tbody>
-            </table>
-        `;
-        
-        resultadoPesquisa.innerHTML = html;
-    } catch (error) {
-        console.error('Erro:', error);
-        document.getElementById('resultadoPesquisa').innerHTML = '<p class="loading" style="color: red;">Erro na pesquisa</p>';
+    } catch {
+        showToast('Erro ao adicionar produto', 'error');
     }
 }
 
-// PERMITIR ENTER NA PESQUISA
-document.getElementById('pesquisaNome').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        pesquisarProduto();
-    }
-});
+// ─── EDIT MODAL ──────────────────────────────────────
+function openEditModal(id) {
+    const product = stockData.find(p => Number(p.id) === id);
+    if (!product) return;
 
-// TOGGLE QUANTIDADE REMOVER
-document.querySelectorAll('input[name="tipoRemocao"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-        const container = document.getElementById('quantidadeRemoverContainer');
-        if (radio.value === '2') {
-            container.style.display = 'block';
+    editingProductId = id;
+    document.getElementById('edit-nome').value = formatName(product.produto);
+    document.getElementById('edit-preco').value = parseFloat(product.preco_unitario).toFixed(2);
+    document.getElementById('edit-quantidade').value = product.quantidade;
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal(e) {
+    if (e && e.target !== document.getElementById('editModal')) return;
+    editingProductId = null;
+    document.getElementById('editModal').classList.remove('active');
+}
+
+async function saveEdit() {
+    const nome = document.getElementById('edit-nome').value.trim();
+    const preco = parseFloat(document.getElementById('edit-preco').value);
+    const quantidade = parseInt(document.getElementById('edit-quantidade').value);
+
+    if (!nome || isNaN(preco) || preco <= 0 || isNaN(quantidade) || quantidade <= 0) {
+        showToast('Preencha todos os campos corretamente', 'error');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/editar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: editingProductId, produto: nome, quantidade, preco_unitario: preco })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast(data.mensagem, 'success');
+            editingProductId = null;
+            document.getElementById('editModal').classList.remove('active');
+            await loadStock();
         } else {
-            container.style.display = 'none';
+            showToast(data.erro, 'error');
         }
+    } catch {
+        showToast('Erro ao editar produto', 'error');
+    }
+}
+
+// ─── DELETE PRODUCT ──────────────────────────────────
+async function deleteProduct(id, nome) {
+    if (!confirm(`Deseja excluir "${formatName(nome)}"? Esta ação não pode ser desfeita.`)) return;
+
+    try {
+        const res = await fetch('/api/deletar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ produto: nome, modo: 1 })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast(data.mensagem, 'success');
+            await loadStock();
+        } else {
+            showToast(data.erro, 'error');
+        }
+    } catch {
+        showToast('Erro ao excluir produto', 'error');
+    }
+}
+
+// ─── SORT ────────────────────────────────────────────
+function setSortField(field) {
+    currentSortField = field;
+    document.querySelectorAll('.sort-btn[data-field]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.field === field);
     });
-});
+    applySortToAPI();
+}
 
-// REMOVER PRODUTO
-async function removerProduto() {
-    const produto = document.getElementById('produtoRemover').value.trim().replace(' ', '_').toLowerCase();
-    const modo = parseInt(document.querySelector('input[name="tipoRemocao"]:checked').value);
-    const quantidade = parseInt(document.getElementById('quantidadeRemover').value) || 0;
-    
-    if (!produto) {
-        alert('Digite o nome do produto!');
-        return;
-    }
-    
-    if (modo === 2 && quantidade <= 0) {
-        alert('Digite a quantidade a remover!');
-        return;
-    }
-    
-    if (!confirm(`Tem certeza que deseja ${modo === 1 ? 'deletar todo' : 'remover'} o produto "${produto.replace(/_/g, ' ')}"?`)) {
-        return;
-    }
-    
+function setSortDir(dir) {
+    currentSortDir = dir;
+    document.querySelectorAll('.sort-btn[data-dir]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.dir === dir);
+    });
+    applySortToAPI();
+}
+
+async function applySortToAPI() {
     try {
-        const response = await fetch(`${API_BASE}/deletar`, {
+        const res = await fetch('/api/ordenar', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                produto: produto,
-                modo: modo,
-                quantidade: modo === 2 ? quantidade : 0
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campo: currentSortField, ordem: currentSortDir })
         });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            mostrarMensagem('sucesso', '✅ Sucesso!', data.mensagem);
-            document.getElementById('produtoRemover').value = '';
-            document.getElementById('quantidadeRemover').value = '';
+        const data = await res.json();
+        if (res.ok) {
+            await loadStock();
         } else {
-            mostrarMensagem('erro', '❌ Erro', data.erro);
+            showToast(data.erro, 'error');
         }
-    } catch (error) {
-        console.error('Erro:', error);
-        mostrarMensagem('erro', '❌ Erro', 'Erro ao remover produto');
+    } catch {
+        showToast('Erro ao ordenar estoque', 'error');
     }
 }
 
-// ATUALIZAR PREÇO
-async function atualizarPreco() {
-    const produto = document.getElementById('produtoAtualizarPreco').value.trim().replace(' ', '_').toLowerCase();
-    const novoPreco = parseFloat(document.getElementById('novoPreco').value);
-    
-    if (!produto || novoPreco <= 0) {
-        alert('Preencha todos os campos corretamente!');
-        return;
-    }
-    
+// ─── CLEAR STOCK ─────────────────────────────────────
+async function clearStock() {
+    if (!confirm('Deseja esvaziar todo o estoque? Esta ação não pode ser desfeita.')) return;
+
     try {
-        const response = await fetch(`${API_BASE}/atualizar-preco`, {
+        const res = await fetch('/api/limpar', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                produto: produto,
-                preco: novoPreco
-            })
+            headers: { 'Content-Type': 'application/json' }
         });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            mostrarMensagem('sucesso', '✅ Sucesso!', data.mensagem);
-            document.getElementById('produtoAtualizarPreco').value = '';
-            document.getElementById('novoPreco').value = '';
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast(data.mensagem, 'success');
+            await loadStock();
         } else {
-            mostrarMensagem('erro', '❌ Erro', data.erro);
+            showToast(data.erro, 'error');
         }
-    } catch (error) {
-        console.error('Erro:', error);
-        mostrarMensagem('erro', '❌ Erro', 'Erro ao atualizar preço');
+    } catch {
+        showToast('Erro ao esvaziar estoque', 'error');
     }
 }
 
-// LIMPAR ESTOQUE
-async function limparEstoque() {
-    if (!confirm('⚠️ ATENÇÃO! Isso irá deletar TODOS os produtos do estoque. Tem certeza?')) {
-        return;
-    }
-    
-    if (!confirm('Esta ação não pode ser desfeita. Confirma mesmo assim?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_BASE}/limpar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            mostrarMensagem('sucesso', '✅ Sucesso!', data.mensagem);
-        } else {
-            mostrarMensagem('erro', '❌ Erro', data.erro);
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-        mostrarMensagem('erro', '❌ Erro', 'Erro ao limpar estoque');
-    }
-}
+// ─── TOAST ───────────────────────────────────────────
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
 
-// ORDENAR ESTOQUE
-async function ordenarEstoque() {
-    const campo = document.getElementById('ordenarPor').value;
-    
-    try {
-        const response = await fetch(`${API_BASE}/ordenar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                campo: campo,
-                ordem: 'asc'
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            carregarEstoque();
-            mostrarMensagem('sucesso', '✅ Sucesso!', data.mensagem);
-        } else {
-            mostrarMensagem('erro', '❌ Erro', data.erro);
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-        mostrarMensagem('erro', '❌ Erro', 'Erro ao ordenar estoque');
-    }
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(110%)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
-
-// CARREGAR ESTOQUE AO INICIAR
-document.addEventListener('DOMContentLoaded', carregarEstoque);
