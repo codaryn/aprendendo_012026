@@ -1,7 +1,101 @@
 id,produto,quantidade,preco_unitario
-1,kaiane,23,0.4
-2,lucas,2,0.67
-3,xixi,32,12.0
-4,coco,2,21.0
-5,ola,100,12.0
-6,12,32,32.0
+1,Papel A4,250,25.90
+2,Caneta Azul,120,1.50
+3,Lápis HB,180,0.90
+4,Borracha Branca,95,1.20
+5,Caderno Universitário,80,18.00
+6,Pasta Suspensa,60,2.50
+7,Grampeador Médio,35,35.00
+8,Clips 3/0,200,4.00
+9,Fita Adesiva Transparente,45,8.00
+10,Post-it 76x76mm,150,9.00
+11,Marcador Permanente Preto,75,4.50
+12,Tesoura Escolar,40,12.00
+13,Régua 30cm,65,3.50
+14,Corretivo Líquido,55,6.00
+15,Apontador Simples,90,2.00
+16,Papel Sulfite Colorido,70,18.50
+17,Envelope A4,300,0.80
+18,Pincel Atômico Azul,50,5.50
+19,Pincel Atômico Vermelho,48,5.50
+20,Pincel Atômico Preto,52,5.50
+21,Calculadora Básica,20,25.00
+22,Calculadora Científica,15,89.90
+23,Mouse USB,40,29.90
+24,Teclado USB,35,49.90
+25,Monitor 21 Polegadas,12,699.90
+26,Webcam HD,18,89.90
+27,Headset USB,22,79.90
+28,Cabo HDMI 2m,60,19.90
+29,Cabo de Rede 5m,75,14.90
+30,Pen Drive 32GB,55,29.90
+31,Pen Drive 64GB,40,49.90
+32,HD Externo 1TB,10,349.90
+33,SSD 240GB,20,179.90
+34,SSD 480GB,18,279.90
+35,Memória RAM 8GB,25,149.90
+36,Memória RAM 16GB,15,289.90
+37,Fonte 500W,12,199.90
+38,Gabinete ATX,10,249.90
+39,Placa de Rede USB,28,39.90
+40,Adaptador Wi-Fi USB,35,59.90
+41,Lâmpada LED 9W,120,7.90
+42,Lâmpada LED 15W,100,11.90
+43,Refletor LED 50W,30,79.90
+44,Fita LED 5m,40,49.90
+45,Sensor de Presença,25,39.90
+46,Interruptor Simples,80,8.90
+47,Tomada Dupla,70,12.90
+48,Disjuntor 20A,50,18.90
+49,Disjuntor 32A,40,22.90
+50,Quadro de Distribuição,12,129.90
+51,Cabo Flexível 1,5mm,500,2.20
+52,Cabo Flexível 2,5mm,450,3.50
+53,Cabo Flexível 4mm,300,5.80
+54,Cabo Flexível 6mm,250,8.90
+55,Fita Isolante,150,4.50
+56,Conector Wago 2 Vias,200,1.80
+57,Conector Wago 3 Vias,180,2.50
+58,Canaleta PVC 20x10,100,12.90
+59,Caixa de Passagem,70,9.90
+60,Campainha Residencial,25,29.90
+61,Câmera de Segurança HD,18,149.90
+62,DVR 4 Canais,10,399.90
+63,DVR 8 Canais,8,699.90
+64,Fonte 12V 5A,25,49.90
+65,Fonte 12V 10A,18,89.90
+66,Sensor Magnético,40,14.90
+67,Cabo Coaxial 100m,12,179.90
+68,Conector BNC,150,2.00
+69,Rack de Parede 5U,6,399.90
+70,Switch 8 Portas,20,119.90
+71,Switch 16 Portas,12,249.90
+72,Roteador Wi-Fi AC1200,15,189.90
+73,Nobreak 600VA,10,499.90
+74,Nobreak 1200VA,6,899.90
+75,Patch Cord 1m,80,8.90
+76,Patch Cord 2m,75,10.90
+77,Patch Panel 24 Portas,8,219.90
+78,Organizador de Cabos,50,14.90
+79,Bateria Selada 7Ah,20,89.90
+80,Fechadura Elétrica,15,149.90
+81,Controle Remoto Portão,40,39.90
+82,Motor para Portão,5,799.90
+83,Sensor Infravermelho,25,69.90
+84,Lanterna Recarregável,18,59.90
+85,Extensão Elétrica 5m,40,34.90
+86,Filtro de Linha 6 Tomadas,35,29.90
+87,Carregador USB Duplo,50,24.90
+88,Adaptador Universal,30,19.90
+89,Pilha AA Alcalina,200,2.50
+90,Pilha AAA Alcalina,220,2.20
+91,Bateria 9V,60,12.90
+92,Relé Fotoelétrico,25,34.90
+93,Temporizador Digital,15,89.90
+94,Ventilador de Mesa,12,149.90
+95,Suporte para Monitor,18,79.90
+96,Cadeira de Escritório,8,599.90
+97,Mesa para Computador,6,799.90
+98,Organizador de Documentos,30,39.90
+99,Livro Caixa,25,18.90
+100,Agenda Executiva,20,29.90
