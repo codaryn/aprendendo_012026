@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import os
-from datetime import datetime
 app = Flask(__name__)
 
 CSV_FILE = "estoque.csv"
