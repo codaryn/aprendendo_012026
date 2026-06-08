@@ -11,6 +11,8 @@ def init_csv():
         df = pd.DataFrame(columns=["id", "produto", "quantidade", "preco_unitario"])
         df.to_csv(CSV_FILE, index=False)
 
+init_csv()
+
 def get_df():
     return pd.read_csv(CSV_FILE)
 def save_df(df):
@@ -185,5 +187,4 @@ def editar_produto():
         return jsonify({'erro': str(e)}), 500
 
 if __name__ == '__main__':
-    init_csv()
     app.run(debug=True, host='0.0.0.0', port=5000)
