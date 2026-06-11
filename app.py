@@ -19,11 +19,11 @@ def save_df(df):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
-
-@app.route('/apresentacao')
-def apresentacao():
     return render_template('apresentacao.html')
+
+@app.route('/sistema')
+def sistema():
+    return render_template('index.html')
 
 @app.route('/api/estoque', methods=['GET'])
 def get_estoque():
